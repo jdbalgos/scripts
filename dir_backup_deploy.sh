@@ -4,14 +4,13 @@
 #NOTE: Please make the script file only executable and accessible by the user, sample: chmod 700 dir_backup_deploy.sh
 
 #NEEDED variables in order to run
+BACKUP_NAME=
 BACKUP_DIR=
-if [[ ${BACKUP_DIR} == '' ]]
+if [[ ${BACKUP_DIR} == '' || ${BACKUP_NAME} == '']]
 then
   echo "one of the needed variables is/are missing" 
   exit 1
 fi
-#If you need to change the backup prefix, change here, hence will use the backup directory as the name
-BACKUP_NAME=
 #If you want to ignore folders you need to add the filepath inside the parenthesis, NO COMMA(,) sample: IGNORE_DIRS=("/test1/ignore1" "/test1/.ignore2")
 IGNORE_DIRS=()
 # additional variables, can be change according to preference
