@@ -81,7 +81,9 @@ echo "This script will try to run: ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_US
 bash ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh
 
 echo "trying to add the script to crontab" 
-sed -i "/${SQL_DB_NAME}_${SQL_USER}/d" ${CRONTAB_SPOOL_FILE}
-echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh > /dev/null"  >> ${CRONTAB_SPOOL_FILE}
+if [[ -f ${CRONTAB_SPOOL_FILE} ]]; then
+  sed -i "/${SQL_DB_NAME}_${SQL_USER}/d" ${CRONTAB_SPOOL_FILE}
+fi
+echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh &> /dev/null"  >> ${CRONTAB_SPOOL_FILE}
 
 exit 0
