@@ -6,7 +6,7 @@
 #NEEDED variables in order to run
 BACKUP_NAME=
 BACKUP_DIR=
-if [[ ${BACKUP_DIR} == '' || ${BACKUP_NAME} == '']]
+if [[ ${BACKUP_DIR} == '' || ${BACKUP_NAME} == '' ]]
 then
   echo "one of the needed variables is/are missing" 
   exit 1
