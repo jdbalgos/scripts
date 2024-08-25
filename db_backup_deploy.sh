@@ -4,6 +4,7 @@
 #NOTE: Please make the script file only executable and accessible by the user, sample: chmod 700 db_backup_deploy.sh
 
 #NEEDED variables in order to run
+BACKUP_NAME=
 SQL_HOST=
 SQL_PORT=
 SQL_DB_NAME=
@@ -14,7 +15,8 @@ if [[ ${SQL_HOST} == '' ]] || \
    [[ ${SQL_PORT} == '' ]] || \
    [[ ${SQL_DB_NAME} == '' ]] || \
    [[ ${SQL_USER} == '' ]] || \
-   [[ ${SQL_PASS} == '' ]]
+   [[ ${SQL_PASS} == '' ]] || \
+   [[ ${BACKUP_NAME} == '' ]] 
 then
   echo "one of the needed variables is/are missing" 
   exit 1
@@ -53,9 +55,9 @@ then
   mkdir -p ${BACKUP_DIR}
 fi
 
-cat << EOF >${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh
+cat << EOF >${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
 #!/bin/bash
-SQL_FILE=${BACKUP_DIR}/${SQL_DB_NAME}_${SQL_USER}_\`date +%s\`.sql
+SQL_FILE=${BACKUP_DIR}/${BACKUP_NAME}_\`date +%s\`.sql
 mysqldump --no-tablespaces -h ${SQL_HOST} -P ${SQL_PORT} -u ${SQL_USER} -p${SQL_PASS} ${SQL_DB_NAME} > \${SQL_FILE}
 if [[ \$? -ne 0 ]]
 then
@@ -64,26 +66,26 @@ then
 else
   echo "successfully backup in: \${SQL_FILE}"
 fi
-find ${BACKUP_DIR} -name "${SQL_DB_NAME}_${SQL_USER}_*.sql" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f 
-echo "Total number of backup file: \`find ${BACKUP_DIR} -name "${SQL_DB_NAME}_${SQL_USER}_*.sql" | wc -l\`"
+find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f 
+echo "Total number of backup file: \`find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | wc -l\`"
 
 EOF
-if ! [[ -f ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh ]]
+if ! [[ -f ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh ]]
 then
   echo "failed to create the backup script file, please check permissions"
   exit 1
 else
-  echo "created the backup script: ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh"
+  echo "created the backup script: ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh"
 fi
 
-chmod 700 ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh
-echo "This script will try to run: ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh"
-bash ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh
+chmod 700 ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
+echo "This script will try to run: ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh"
+bash ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
 
 echo "trying to add the script to crontab" 
 if [[ -f ${CRONTAB_SPOOL_FILE} ]]; then
-  sed -i "/${SQL_DB_NAME}_${SQL_USER}/d" ${CRONTAB_SPOOL_FILE}
+  sed -i "/${BACKUP_NAME}/d" ${CRONTAB_SPOOL_FILE}
 fi
-echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPTS_DIR}/${SQL_DB_NAME}_${SQL_USER}_db_backup.sh &> /dev/null"  >> ${CRONTAB_SPOOL_FILE}
+echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh &> /dev/null"  >> ${CRONTAB_SPOOL_FILE}
 
 exit 0

@@ -59,12 +59,7 @@ then
   mkdir -p ${BACKUP_OUT_DIR}
 fi
 
-if [[ $BACKUP_NAME = '' ]]; then
-  BACKUP_NAME=`echo ${BACKUP_DIR} | sed 's|/||'`
-  BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_backup.sh`
-else
-  BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_backup.sh`
-fi
+BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_backup.sh`
 
 cat << EOF >${BACKUP_SCRIPT_FILEPATH}
 BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date +%s\`.tgz
