@@ -30,14 +30,14 @@ then
   echo "tar client is not yet installed please install it!"
   echo "this script will try to install mysql client, please press Ctrl+C if you want it to install it yourselves"
   sleep 5
-  dnf install -y tar
+  yum install -y tar
 fi
 if ! command -v gzip > /dev/null
 then
   echo "gzip client is not yet installed please install it!"
   echo "this script will try to install mysql client, please press Ctrl+C if you want it to install it yourselves"
   sleep 5
-  dnf install -y gzip
+  yum install -y gzip
 fi
 
 BACKUP_SCRIPTS_DIR=`echo ${BACKUP_SCRIPTS_DIR} | sed 's|/$||'`
