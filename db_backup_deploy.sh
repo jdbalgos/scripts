@@ -84,7 +84,7 @@ bash ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
 
 echo "trying to add the script to crontab" 
 if [[ -f ${CRONTAB_SPOOL_FILE} ]]; then
-  sed -i "/${BACKUP_NAME}/d" ${CRONTAB_SPOOL_FILE}
+  sed -i "/${BACKUP_NAME}_db_backup.sh/d" ${CRONTAB_SPOOL_FILE}
 fi
 echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh &> /dev/null"  >> ${CRONTAB_SPOOL_FILE}
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #The script was only tested on a CentOS machine, additional changes will be done in the future
 #This is a deployment script for making a backup schedule every X days, the database data retention will be the latest X backups(depends on user preference in NUMBER_OF_BACKUPS), older backups will be deleted by the script 
-#NOTE: Please make the script file only executable and accessible by the user, sample: chmod 700 dir_backup_deploy.sh
+#NOTE: Please make the script file only executable and accessible by the user, sample: chmod 700 dir_dir_backup_deploy.sh
 
 #NEEDED variables in order to run
 BACKUP_NAME=
@@ -59,7 +59,7 @@ then
   mkdir -p ${BACKUP_OUT_DIR}
 fi
 
-BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_backup.sh`
+BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_dir_backup.sh`
 
 cat << EOF >${BACKUP_SCRIPT_FILEPATH}
 BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date +%s\`.tgz
@@ -87,7 +87,7 @@ bash ${BACKUP_SCRIPT_FILEPATH}
 
 echo "trying to add the script to crontab" 
 if [[ -f ${CRONTAB_SPOOL_FILE} ]]; then
-  sed -i "/${BACKUP_NAME}_backup.sh/d" ${CRONTAB_SPOOL_FILE}
+  sed -i "/${BACKUP_NAME}_dir_backup.sh/d" ${CRONTAB_SPOOL_FILE}
 fi
 echo "${CRONTAB} /bin/bash ${BACKUP_SCRIPT_FILEPATH} &> /dev/null"  >> ${CRONTAB_SPOOL_FILE}
 
