@@ -57,7 +57,7 @@ fi
 
 cat << EOF >${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
 #!/bin/bash
-SQL_FILE=${BACKUP_DIR}/${BACKUP_NAME}_\`date +%s\`.sql
+SQL_FILE=${BACKUP_DIR}/${BACKUP_NAME}_\`date -I\`.sql
 mysqldump --no-tablespaces -h ${SQL_HOST} -P ${SQL_PORT} -u ${SQL_USER} -p${SQL_PASS} ${SQL_DB_NAME} > \${SQL_FILE}
 if [[ \$? -ne 0 ]]
 then

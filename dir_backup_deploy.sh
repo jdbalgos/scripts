@@ -62,7 +62,7 @@ fi
 BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_dir_backup.sh`
 
 cat << EOF >${BACKUP_SCRIPT_FILEPATH}
-BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date +%s\`.tgz
+BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date -I\`.tgz
 tar ${EXCLUDE_DIRS} -zcf \${BACKUP_FILE} ${BACKUP_DIR}
 if [[ \$? -ne 0  ]]; then
   echo "\`date +%c failed to do backup\`"
