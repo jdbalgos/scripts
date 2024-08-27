@@ -11,6 +11,7 @@ SQL_DB_NAME=
 SQL_USER=
 SQL_PASS=
 
+
 if [[ ${SQL_HOST} == '' ]] || \
    [[ ${SQL_PORT} == '' ]] || \
    [[ ${SQL_DB_NAME} == '' ]] || \
@@ -32,6 +33,16 @@ CRONTAB_SPOOL_FILE=/var/spool/cron/root
 NUMBER_OF_BACKUPS=5
 #default number of times the script will run in crontab  * * * * * format
 CRONTAB="0 0 * * *"
+### TELEGRAM Notification BOT API KEY and group notification, Leave it with no value if not needed
+TG_API_KEY=""
+TG_GROUP=""
+
+if [[ ${TG_API_KEY} == '' ]] || [[ ${TG_GROUP} == '' ]]; then
+  TG_FLAG=0
+else
+  TG_FLAG=1
+  IP_ADD=`curl api.ip.sb`
+fi
 
 if ! command -v mysqldump > /dev/null
 then
@@ -54,7 +65,7 @@ then
   echo "${BACKUP_DIR} directory does not exist"
   mkdir -p ${BACKUP_DIR}
 fi
-
+if [[ TG_FLAG -eq 0 ]]; then
 cat << EOF >${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
 #!/bin/bash
 SQL_FILE=${BACKUP_DIR}/${BACKUP_NAME}_\`date -I\`.sql
@@ -68,8 +79,32 @@ else
 fi
 find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f 
 echo "Total number of backup file: \`find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | wc -l\`"
-
 EOF
+else
+cat << EOF >${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh
+#!/bin/bash
+SQL_FILE=${BACKUP_DIR}/${BACKUP_NAME}_\`date -I\`.sql
+mysqldump --no-tablespaces -h ${SQL_HOST} -P ${SQL_PORT} -u ${SQL_USER} -p${SQL_PASS} ${SQL_DB_NAME} > \${SQL_FILE}
+if [[ \$? -ne 0 ]]
+then
+  echo "failed to access database, quitting"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} database backup failed", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+  exit 1
+else
+  echo "successfully backup in: \${SQL_FILE}"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} database backup successful", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+fi
+find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f 
+echo "Total number of backup file: \`find ${BACKUP_DIR} -name "${BACKUP_NAME}_*.sql" | wc -l\`"
+EOF
+fi
+
 if ! [[ -f ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_db_backup.sh ]]
 then
   echo "failed to create the backup script file, please check permissions"
