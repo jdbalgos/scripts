@@ -4,7 +4,7 @@
 #DO NOT use underscore(_) on AWS_DIR_NAME a please use dash(-)
 #To prevent the script from accidental deleting files in the cloud, please make the AWS
 #Please make AWS_DIR_NAME unique
-AWS_DIR_NAME=""
+AWS_DIR_NAME="" #no underscore, use dash
 AWS_ACCESS_KEY_ID=""
 AWS_SECRET_ACCESS_KEY=""
 AWS_DEFAULT_REGION=""
@@ -23,6 +23,16 @@ BACKUP_SCRIPTS_DIR=/opt/backup_scripts
 CRONTAB_SPOOL_FILE=/var/spool/cron/root
 #CRONTAB default schedule, default is everyday
 CRONTAB="0 0 * * *"
+### TELEGRAM Notification BOT API KEY and group notification, Leave it with no value if not needed
+TG_API_KEY=""
+TG_GROUP=""
+
+if [[ ${TG_API_KEY} == '' ]] || [[ ${TG_GROUP} == '' ]]; then
+  TG_FLAG=0
+else
+  TG_FLAG=1
+  IP_ADD=`curl api.ip.sb`
+fi
 
 if ! command -v aws &> /dev/null; then
   echo "aws command could not be found, will automatically install aws cli... Ctrl+C to quit"
@@ -62,7 +72,7 @@ if [[ -d ${BACKUP_SCRIPTS_DIR} ]]; then
 fi
 
 AWS_SCRIPT_FILEPATH=${BACKUP_SCRIPTS_DIR}/${AWS_DIR_NAME}_aws.sh
-
+if [[ TG_FLAG -eq 0 ]]; then
 cat << EOF > ${AWS_SCRIPT_FILEPATH}
 #!/bin/bash
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -75,6 +85,28 @@ else
   echo "\$(date): BACKUP FAILED"
 fi
 EOF
+else
+cat << EOF > ${AWS_SCRIPT_FILEPATH}
+#!/bin/bash
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+${AWS_PATH} s3 sync ${DIR_TO_BACKUP} ${S3_DIR}
+if [[ \$? -eq 0 ]]; then
+  echo "\$(date): BACKUP SUCCESSFUL"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} AWS backup successful", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+else
+  echo "\$(date): BACKUP FAILED"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} AWS backup failed", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+fi
+EOF
+fi
 
 if ! [[ -f ${AWS_SCRIPT_FILEPATH} ]]; then
   echo "failed to create the backup script file, please check permissions"
