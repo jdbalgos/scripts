@@ -23,7 +23,17 @@ CRONTAB_SPOOL_FILE=/var/spool/cron/root
 #default number of backups are 5, change if needed
 NUMBER_OF_BACKUPS=5
 #default number of times the script will run in crontab  * * * * * format, current setup is every week
-CRONTAB="0 0 * * 0"
+CRONTAB="0 0 15,30 * *"
+### TELEGRAM Notification BOT API KEY and group notification, Leave it with no value if not needed
+TG_API_KEY=""
+TG_GROUP=""
+
+if [[ ${TG_API_KEY} == '' ]] || [[ ${TG_GROUP} == '' ]]; then
+  TG_FLAG=0
+else
+  TG_FLAG=1
+  IP_ADD=`curl api.ip.sb`
+fi
 
 if ! command -v tar > /dev/null
 then
@@ -60,7 +70,7 @@ then
 fi
 
 BACKUP_SCRIPT_FILEPATH=`echo ${BACKUP_SCRIPTS_DIR}/${BACKUP_NAME}_dir_backup.sh`
-
+if [[ TG_FLAG -eq 0 ]]; then
 cat << EOF >${BACKUP_SCRIPT_FILEPATH}
 BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date -I\`.tgz
 tar ${EXCLUDE_DIRS} -zcf \${BACKUP_FILE} ${BACKUP_DIR}
@@ -72,6 +82,27 @@ fi
 find ${BACKUP_OUT_DIR} -name "${BACKUP_NAME}_*.tgz" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f
 echo "Total number of backup file: \`find ${BACKUP_OUT_DIR} -name "${BACKUP_NAME}_*.tgz" | wc -l\`"
 EOF
+else
+cat << EOF >${BACKUP_SCRIPT_FILEPATH}
+BACKUP_FILE=${BACKUP_OUT_DIR}/${BACKUP_NAME}_\`date -I\`.tgz
+tar ${EXCLUDE_DIRS} -zcf \${BACKUP_FILE} ${BACKUP_DIR}
+if [[ \$? -ne 0  ]]; then
+  echo "\`date +%c failed to do backup\`"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} directory backup failed", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+else
+  echo "successfully backup in: \${BACKUP_FILE}"
+  curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"chat_id": "${TG_GROUP}", "text": "${HOSTNAME}[${IP_ADD}]: ${BACKUP_NAME} directory backup successful", "disable_notification": true}' \
+     https://api.telegram.org/bot${TG_API_KEY}/sendMessage
+fi
+find ${BACKUP_OUT_DIR} -name "${BACKUP_NAME}_*.tgz" | tac | tail -n +${NUMBER_OF_BACKUPS} | xargs rm -f
+echo "Total number of backup file: \`find ${BACKUP_OUT_DIR} -name "${BACKUP_NAME}_*.tgz" | wc -l\`"
+EOF
+fi
 
 if ! [[ -f ${BACKUP_SCRIPT_FILEPATH} ]]; then
   echo "failed to create the backup script file, please check permissions"
